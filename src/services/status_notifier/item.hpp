@@ -130,6 +130,12 @@ public:
 	Q_INVOKABLE void activate();
 	/// Secondary activation action, generally triggered via a middle click.
 	Q_INVOKABLE void secondaryActivate();
+	/// Ask the item to show its own context menu at the given screen coordinates.
+	///
+	/// This is generally triggered via a right click on items without a @@menu,
+	/// such as Wine applications or XEmbed icons bridged by xembedsniproxy.
+	/// Items which draw their own menu may use the coordinates to place it.
+	Q_INVOKABLE void contextMenu(qint32 x, qint32 y);
 	/// Scroll action, such as changing volume on a mixer.
 	Q_INVOKABLE void scroll(qint32 delta, bool horizontal) const;
 	/// Display a platform menu at the given location relative to the parent window.
