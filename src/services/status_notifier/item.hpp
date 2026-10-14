@@ -31,6 +31,7 @@ enum Enum : quint8 {
 	/// A passive item does not convey important information and can be considered idle. You may want to hide these.
 	Passive = 0,
 	/// An active item may have information more important than a passive one and you probably do not want to hide it.
+	/// Items with a missing or nonconformant status are treated as active.
 	Active = 1,
 	/// An item that needs attention conveys very important information such as low battery.
 	NeedsAttention = 2,
@@ -184,7 +185,7 @@ private:
 	// clang-format off
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bId, &StatusNotifierItem::idChanged);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bTitle, &StatusNotifierItem::titleChanged);
-	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, Status::Enum, bStatus, &StatusNotifierItem::statusChanged);
+	Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(StatusNotifierItem, Status::Enum, bStatus, Status::Active, &StatusNotifierItem::statusChanged);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, Category::Enum, bCategory, &StatusNotifierItem::categoryChanged);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bIconThemePath);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bIconName);
