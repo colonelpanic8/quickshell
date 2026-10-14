@@ -6,3 +6,5 @@
 - Fixed `WlSessionLock.locked` changes not being emitted on unlock.
 - Fixed a crash when unplugging a screen being captured by ScreencopyView or trying to capture the fallback screen.
 - Fixed most broken qml types in qmlls/qmllint for Qt 6.12.
+- Fixed notification images with unpadded rows being decoded incorrectly.
+- Fixed a possible crash when a notification image is smaller than its stated size.
