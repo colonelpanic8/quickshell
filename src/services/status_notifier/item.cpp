@@ -142,16 +142,22 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 		const DBusSniIconPixmap* ret = nullptr;
 
 		for (const auto& pixmap: pixmaps) {
+			if (pixmap.width <= 0 || pixmap.height <= 0 || pixmap.data.isEmpty()) continue;
+
 			if (ret == nullptr) {
 				ret = &pixmap;
 				continue;
 			}
 
+			// Prefer the smallest pixmap covering the requested size, otherwise the largest.
 			auto existingAdequate = ret->width >= size.width() && ret->height >= size.height();
-			auto newAdequite = pixmap.width >= size.width() && pixmap.height >= size.height();
-			auto newSmaller = pixmap.width < ret->width || pixmap.height < ret->height;
+			auto newAdequate = pixmap.width >= size.width() && pixmap.height >= size.height();
+			auto existingArea = static_cast<qint64>(ret->width) * ret->height;
+			auto newArea = static_cast<qint64>(pixmap.width) * pixmap.height;
 
-			if ((existingAdequate && newAdequite && newSmaller) || (!existingAdequate && !newSmaller)) {
+			if (newAdequate != existingAdequate) {
+				if (newAdequate) ret = &pixmap;
+			} else if (newAdequate ? newArea < existingArea : newArea > existingArea) {
 				ret = &pixmap;
 			}
 		}
@@ -173,7 +179,7 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 
 			if (icon != nullptr) {
 				const auto image =
-				    icon->createImage().scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+				    icon->createImage().scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
 				pixmap = QPixmap::fromImage(image);
 			}
@@ -187,7 +193,7 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 
 			if (icon != nullptr) {
 				const auto image =
-				    icon->createImage().scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+				    icon->createImage().scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
 				pixmap = QPixmap::fromImage(image);
 			}
