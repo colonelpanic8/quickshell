@@ -11,6 +11,7 @@ namespace qs::service::notifications {
 struct DBusNotificationImage {
 	qint32 width = 0;
 	qint32 height = 0;
+	qint32 rowstride = 0;
 	bool hasAlpha = false;
 	QByteArray data;
 
