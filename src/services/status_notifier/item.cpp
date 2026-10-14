@@ -1,4 +1,5 @@
 #include "item.hpp"
+#include <algorithm>
 
 #include <qdbuserror.h>
 #include <qdbusextratypes.h>
@@ -95,8 +96,10 @@ StatusNotifierItem::StatusNotifierItem(const QString& address, QObject* parent)
 				return IconImageProvider::requestString(name, this->bIconThemePath.value());
 		} else {
 			auto name = this->bIconName.value();
-			auto overlayName = this->bOverlayIconName.value();
-			if (!name.isEmpty() && overlayName.isEmpty())
+			auto hasOverlay =
+			    !this->bOverlayIconName.value().isEmpty() || !this->bOverlayIconPixmaps.value().isEmpty();
+
+			if (!name.isEmpty() && !hasOverlay)
 				return IconImageProvider::requestString(name, this->bIconThemePath.value());
 		}
 
@@ -193,24 +196,27 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 			}
 		}
 
+		// The overlay is drawn as a badge in the corner instead of covering the whole icon.
+		auto overlaySize = QSize(std::max(1, size.width() * 2 / 5), std::max(1, size.height() * 2 / 5));
+
 		QPixmap overlay;
 		if (!this->bOverlayIconName.value().isEmpty()) {
 			auto icon = QIcon::fromTheme(this->bOverlayIconName.value());
-			overlay = icon.pixmap(pixmap.width(), pixmap.height());
+			overlay = icon.pixmap(overlaySize.width(), overlaySize.height());
 		} else {
-			const auto* icon = closestPixmap(pixmap.size(), this->bOverlayIconPixmaps.value());
+			const auto* icon = closestPixmap(overlaySize, this->bOverlayIconPixmaps.value());
 
 			if (icon != nullptr) {
 				const auto image =
-				    icon->createImage().scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+				    icon->createImage().scaled(overlaySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
 				overlay = QPixmap::fromImage(image);
 			}
 		}
 
-		if (!overlay.isNull()) {
+		if (!pixmap.isNull() && !overlay.isNull()) {
 			auto painter = QPainter(&pixmap);
-			painter.drawPixmap(QRect(0, 0, pixmap.width(), pixmap.height()), overlay);
+			painter.drawPixmap(QRect(0, 0, overlay.width(), overlay.height()), overlay);
 			painter.end();
 		}
 	}
