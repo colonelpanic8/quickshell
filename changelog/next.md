@@ -4,3 +4,4 @@
 - Fixed Hyprland workspaces keeping their old id after Hyprland changes it.
 - Fixed desktop entries being parsed incorrectly with trailing whitespace or CRLF line endings.
 - Fixed `WlSessionLock.locked` changes not being emitted on unlock.
+- Fixed log spam when Chromium/Electron and Qt 6 tray items fail reads of properties they do not provide.
