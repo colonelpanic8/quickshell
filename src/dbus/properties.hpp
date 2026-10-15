@@ -242,6 +242,8 @@ public:
 
 	void pushPropertyUpdate(DBusPropertyCore* property);
 	void requestPropertyUpdate(DBusPropertyCore* property);
+	// Applies all values together once every reply has arrived.
+	void requestPropertyUpdates(const QList<DBusPropertyCore*>& properties);
 
 signals:
 	void getAllFinished();
