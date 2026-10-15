@@ -8,31 +8,49 @@
 #include <qpixmap.h>
 #include <qsize.h>
 #include <qstring.h>
+#include <qurl.h>
+#include <qurlquery.h>
+
+namespace {
+
+struct IconRequest {
+	QString iconName;
+	QString fallbackName;
+	QString themePath;
+};
+
+IconRequest parseIconRequest(const QString& id) {
+	auto request = IconRequest();
+	auto splitIdx = id.indexOf('?');
+
+	if (splitIdx == -1) {
+		request.iconName = id;
+		return request;
+	}
+
+	request.iconName = id.sliced(0, splitIdx);
+
+	auto query = QUrlQuery(id.sliced(splitIdx + 1));
+	request.themePath = query.queryItemValue("path", QUrl::FullyDecoded);
+	request.fallbackName = query.queryItemValue("fallback", QUrl::FullyDecoded);
+	return request;
+}
+
+} // namespace
 
 QPixmap
 IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& requestedSize) {
-	QString iconName;
-	QString fallbackName;
-	QString path;
+	auto request = parseIconRequest(id);
 
-	auto splitIdx = id.indexOf("?path=");
-	if (splitIdx != -1) {
-		iconName = id.sliced(0, splitIdx);
-		path = id.sliced(splitIdx + 6);
-		path = QString("/%1/%2").arg(path, iconName.sliced(iconName.lastIndexOf('/') + 1));
-	} else {
-		splitIdx = id.indexOf("?fallback=");
-		if (splitIdx != -1) {
-			iconName = id.sliced(0, splitIdx);
-			fallbackName = id.sliced(splitIdx + 10);
-		} else {
-			iconName = id;
-		}
+	auto icon = QIcon::fromTheme(request.iconName);
+	if (icon.isNull() && !request.fallbackName.isEmpty()) {
+		icon = QIcon::fromTheme(request.fallbackName);
 	}
 
-	auto icon = QIcon::fromTheme(iconName);
-	if (icon.isNull() && !fallbackName.isEmpty()) icon = QIcon::fromTheme(fallbackName);
-	if (icon.isNull() && !path.isEmpty()) icon = QPixmap(path);
+	if (icon.isNull() && !request.themePath.isEmpty()) {
+		auto fileName = request.iconName.sliced(request.iconName.lastIndexOf('/') + 1);
+		icon = QPixmap(QString("/%1/%2").arg(request.themePath, fileName));
+	}
 
 	auto targetSize = requestedSize.isValid() ? requestedSize : QSize(100, 100);
 	if (targetSize.width() == 0 || targetSize.height() == 0) targetSize = QSize(2, 2);
@@ -71,13 +89,18 @@ QString IconImageProvider::requestString(
     const QString& fallback
 ) {
 	auto req = "image://icon/" + icon;
+	auto query = QUrlQuery();
 
 	if (!path.isEmpty()) {
-		req += "?path=" + path;
+		query.addQueryItem("path", QString::fromLatin1(QUrl::toPercentEncoding(path)));
 	}
 
 	if (!fallback.isEmpty()) {
-		req += "?fallback=" + fallback;
+		query.addQueryItem("fallback", QString::fromLatin1(QUrl::toPercentEncoding(fallback)));
+	}
+
+	if (!query.isEmpty()) {
+		req += '?' + query.toString(QUrl::FullyEncoded);
 	}
 
 	return req;
