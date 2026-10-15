@@ -6,3 +6,5 @@
 - Fixed `WlSessionLock.locked` changes not being emitted on unlock.
 - Fixed a crash when unplugging a screen being captured by ScreencopyView or trying to capture the fallback screen.
 - Fixed most broken qml types in qmlls/qmllint for Qt 6.12.
+- Fixed tray icons selecting empty or poorly sized pixmaps and stretching non-square images.
+- Fixed tray overlay icons covering the whole icon instead of being drawn as a badge.
