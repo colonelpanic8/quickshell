@@ -19,7 +19,6 @@ IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& re
 	if (splitIdx != -1) {
 		iconName = id.sliced(0, splitIdx);
 		path = id.sliced(splitIdx + 6);
-		path = QString("/%1/%2").arg(path, iconName.sliced(iconName.lastIndexOf('/') + 1));
 	} else {
 		splitIdx = id.indexOf("?fallback=");
 		if (splitIdx != -1) {
@@ -30,13 +29,9 @@ IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& re
 		}
 	}
 
-	auto icon = QIcon::fromTheme(iconName);
-	if (icon.isNull() && !fallbackName.isEmpty()) icon = QIcon::fromTheme(fallbackName);
-	if (icon.isNull() && !path.isEmpty()) icon = QPixmap(path);
-
 	auto targetSize = requestedSize.isValid() ? requestedSize : QSize(100, 100);
 	if (targetSize.width() == 0 || targetSize.height() == 0) targetSize = QSize(2, 2);
-	auto pixmap = icon.pixmap(targetSize.width(), targetSize.height());
+	auto pixmap = IconImageProvider::requestPixmapForIcon(iconName, path, fallbackName, targetSize);
 
 	if (pixmap.isNull()) {
 		qWarning() << "Could not load icon" << id << "at size" << targetSize << "from request";
@@ -44,6 +39,25 @@ IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& re
 	}
 
 	if (size != nullptr) *size = pixmap.size();
+	return pixmap;
+}
+
+QPixmap IconImageProvider::requestPixmapForIcon(
+    const QString& icon,
+    const QString& path,
+    const QString& fallback,
+    const QSize& size
+) {
+	auto pixmap = QIcon::fromTheme(icon).pixmap(size.width(), size.height());
+	if (pixmap.isNull() && !fallback.isEmpty()) {
+		pixmap = QIcon::fromTheme(fallback).pixmap(size.width(), size.height());
+	}
+
+	if (pixmap.isNull() && !path.isEmpty()) {
+		auto fileName = icon.sliced(icon.lastIndexOf('/') + 1);
+		pixmap = QIcon(QString("/%1/%2").arg(path, fileName)).pixmap(size.width(), size.height());
+	}
+
 	return pixmap;
 }
 
