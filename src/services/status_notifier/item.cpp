@@ -96,8 +96,10 @@ StatusNotifierItem::StatusNotifierItem(const QString& address, QObject* parent)
 				return IconImageProvider::requestString(name, this->bIconThemePath.value());
 		} else {
 			auto name = this->bIconName.value();
-			auto overlayName = this->bOverlayIconName.value();
-			if (!name.isEmpty() && overlayName.isEmpty())
+			auto hasOverlay =
+			    !this->bOverlayIconName.value().isEmpty() || !this->bOverlayIconPixmaps.value().isEmpty();
+
+			if (!name.isEmpty() && !hasOverlay)
 				return IconImageProvider::requestString(name, this->bIconThemePath.value());
 		}
 
