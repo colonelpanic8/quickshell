@@ -1,5 +1,6 @@
 #include "properties.hpp"
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 #include <qcontainerfwd.h>
@@ -16,8 +17,10 @@
 #include <qloggingcategory.h>
 #include <qmetatype.h>
 #include <qobject.h>
+#include <qproperty.h>
 #include <qtmetamacros.h>
 #include <qtversionchecks.h>
+#include <qtypes.h>
 #include <qvariant.h>
 
 #include "../core/logcat.hpp"
@@ -232,37 +235,60 @@ void DBusPropertyGroup::tryUpdateProperty(
 }
 
 void DBusPropertyGroup::requestPropertyUpdate(DBusPropertyCore* property) {
-	const QString propStr = this->propertyString(property);
+	this->requestPropertyUpdates({property});
+}
 
+void DBusPropertyGroup::requestPropertyUpdates(const QList<DBusPropertyCore*>& properties) {
 	if (this->interface == nullptr) {
 		qFatal(logDbusProperties).noquote()
-		    << "Tried to update property" << propStr << "of a disconnected interface";
+		    << "Tried to update properties of a disconnected interface" << this->toString();
 	}
 
-	qCDebug(logDbusProperties).noquote() << "Updating property" << propStr;
-
-	auto pendingCall = this->propertyInterface->Get(this->interface->interface(), property->name());
-	auto* call = new QDBusPendingCallWatcher(pendingCall, this);
-
-	auto responseCallback = [this, propStr, property](QDBusPendingCallWatcher* call) {
-		const QDBusPendingReply<QDBusVariant> reply = *call;
-
-		if (reply.isError()) {
-			if (!property->isRequired() && reply.error().type() == QDBusError::InvalidArgs) {
-				qCDebug(logDbusProperties) << "Error updating non-required property" << propStr;
-				qCDebug(logDbusProperties) << reply.error();
-			} else {
-				qCWarning(logDbusProperties).noquote() << "Error updating property" << propStr;
-				qCWarning(logDbusProperties) << reply.error();
-			}
-		} else {
-			this->tryUpdateProperty(property, reply.value().variant());
-		}
-
-		delete call;
+	struct PendingUpdates {
+		QList<QPair<DBusPropertyCore*, QVariant>> values;
+		qsizetype remaining = 0;
 	};
 
-	QObject::connect(call, &QDBusPendingCallWatcher::finished, this, responseCallback);
+	auto pending = std::make_shared<PendingUpdates>();
+	pending->remaining = properties.size();
+
+	for (auto* property: properties) {
+		const QString propStr = this->propertyString(property);
+		qCDebug(logDbusProperties).noquote() << "Updating property" << propStr;
+
+		auto pendingCall = this->propertyInterface->Get(this->interface->interface(), property->name());
+		auto* call = new QDBusPendingCallWatcher(pendingCall, this);
+
+		auto responseCallback = [this, propStr, property, pending](QDBusPendingCallWatcher* call) {
+			const QDBusPendingReply<QDBusVariant> reply = *call;
+
+			if (reply.isError()) {
+				if (!property->isRequired() && reply.error().type() == QDBusError::InvalidArgs) {
+					qCDebug(logDbusProperties) << "Error updating non-required property" << propStr;
+					qCDebug(logDbusProperties) << reply.error();
+				} else {
+					qCWarning(logDbusProperties).noquote() << "Error updating property" << propStr;
+					qCWarning(logDbusProperties) << reply.error();
+				}
+			} else {
+				pending->values.append({property, reply.value().variant()});
+			}
+
+			if (--pending->remaining == 0) {
+				Qt::beginPropertyUpdateGroup();
+
+				for (const auto& [property, value]: pending->values) {
+					this->tryUpdateProperty(property, value);
+				}
+
+				Qt::endPropertyUpdateGroup();
+			}
+
+			delete call;
+		};
+
+		QObject::connect(call, &QDBusPendingCallWatcher::finished, this, responseCallback);
+	}
 }
 
 void DBusPropertyGroup::pushPropertyUpdate(DBusPropertyCore* property) {
