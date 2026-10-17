@@ -14,3 +14,5 @@
 - Fixed tray items with a missing or nonstandard category being reported as hardware.
 - Fixed `SystemTray.items` not being consistently sorted by category.
 - Fixed log spam when Chromium/Electron and Qt 6 tray items fail reads of properties they do not provide.
+- Fixed tray icons not updating when only their icon theme path changed.
+- Fixed tray icons briefly failing to load when their icon name and theme path changed together.

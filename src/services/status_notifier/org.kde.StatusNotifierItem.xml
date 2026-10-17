@@ -44,6 +44,9 @@
 
     <signal name="NewTitle"/>
     <signal name="NewIcon"/>
+    <signal name="NewIconThemePath">
+      <arg type="s" name="icon_theme_path"/>
+    </signal>
     <signal name="NewAttentionIcon"/>
     <signal name="NewOverlayIcon"/>
     <signal name="NewToolTip"/>
