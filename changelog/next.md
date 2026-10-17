@@ -16,3 +16,4 @@
 - Fixed log spam when Chromium/Electron and Qt 6 tray items fail reads of properties they do not provide.
 - Fixed tray icons not updating when only their icon theme path changed.
 - Fixed tray icons briefly failing to load when their icon name and theme path changed together.
+- Fixed tray overlay pixmaps being ignored for items with a named icon.
