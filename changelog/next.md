@@ -18,3 +18,4 @@
 - Fixed tray icons briefly failing to load when their icon name and theme path changed together.
 - Fixed tray overlay pixmaps being ignored for items with a named icon.
 - Fixed icon requests combining a theme path and fallback, including paths containing URL reserved characters.
+- Fixed icons not being found in a theme path given as a file url, with an extension, or as a directory containing or inside an icon theme.

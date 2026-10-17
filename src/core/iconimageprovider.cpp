@@ -2,12 +2,19 @@
 #include <algorithm>
 
 #include <qcolor.h>
+#include <qdir.h>
+#include <qfileinfo.h>
 #include <qicon.h>
 #include <qlogging.h>
+#include <qnamespace.h>
 #include <qpainter.h>
 #include <qpixmap.h>
+#include <qset.h>
 #include <qsize.h>
 #include <qstring.h>
+#include <qstringbuilder.h>
+#include <qstringlist.h>
+#include <qtypes.h>
 #include <qurl.h>
 #include <qurlquery.h>
 
@@ -36,25 +43,133 @@ IconRequest parseIconRequest(const QString& id) {
 	return request;
 }
 
+const auto ICON_SUFFIXES = QStringList {"png", "svg", "svgz", "xpm"};
+
+// Theme directories are at most theme/size/context deep. The cap bounds the cost
+// of a theme path pointing somewhere large like /usr/share/icons.
+constexpr qsizetype MAX_THEME_DIR_DEPTH = 3;
+constexpr qsizetype MAX_THEME_DIRS = 2048;
+
+// Names to try for an icon, which may be given as a file path, file url, or with an extension.
+QStringList iconNameCandidates(const QString& rawName) {
+	auto name = rawName.trimmed();
+	if (name.startsWith("file://")) name = QUrl(name).toLocalFile();
+	if (name.isEmpty()) return {};
+
+	auto candidates = QStringList();
+
+	auto addWithoutSuffix = [&](const QString& name) {
+		candidates.append(name);
+
+		auto suffix = QFileInfo(name).suffix();
+		if (ICON_SUFFIXES.contains(suffix, Qt::CaseInsensitive)) {
+			candidates.append(name.chopped(suffix.length() + 1));
+		}
+	};
+
+	addWithoutSuffix(name);
+
+	auto fileName = QFileInfo(name).fileName();
+	if (fileName != name) addWithoutSuffix(fileName);
+
+	candidates.removeDuplicates();
+	return candidates;
+}
+
+// The theme path itself, and if it is inside of or contains icon themes, their directories.
+QStringList themePathDirs(const QString& themePath) {
+	auto root = QDir(themePath);
+
+	auto dir = root;
+	for (auto i = 0; i <= MAX_THEME_DIR_DEPTH; i++) {
+		if (dir.exists("index.theme")) {
+			root = dir;
+			break;
+		}
+
+		if (!dir.cdUp()) break;
+	}
+
+	auto dirs = QStringList {QDir(themePath).absolutePath()};
+	auto level = QStringList {root.absolutePath()};
+
+	for (auto depth = 0; depth <= MAX_THEME_DIR_DEPTH && !level.isEmpty(); depth++) {
+		auto next = QStringList();
+
+		for (const auto& path: level) {
+			dirs.append(path);
+			if (dirs.size() >= MAX_THEME_DIRS) return dirs;
+
+			if (depth == MAX_THEME_DIR_DEPTH) continue;
+			for (const auto& entry: QDir(path).entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+				next.append(path % '/' % entry);
+			}
+		}
+
+		level = next;
+	}
+
+	dirs.removeDuplicates();
+	return dirs;
+}
+
+// Loads an icon from files rather than the global icon theme, as modifying the theme
+// search paths is not thread safe and image providers run off the gui thread.
+QIcon iconFromFiles(const QStringList& names, const QString& themePaths) {
+	auto icon = QIcon();
+	auto added = QSet<QString>();
+
+	auto addFile = [&](const QString& file) {
+		if (added.contains(file) || !QFileInfo(file).isFile()) return;
+		added.insert(file);
+
+		if (icon.isNull()) icon = QIcon(file);
+		else icon.addFile(file);
+	};
+
+	for (const auto& name: names) {
+		if (QFileInfo(name).isAbsolute()) addFile(name);
+	}
+
+	// dbusmenu sends a list of theme paths, which is joined with ':'.
+	for (const auto& themePath: themePaths.split(':', Qt::SkipEmptyParts)) {
+		for (const auto& dir: themePathDirs(themePath)) {
+			for (const auto& name: names) {
+				if (QFileInfo(name).isAbsolute()) continue;
+
+				auto base = dir % '/' % name;
+				addFile(base);
+
+				for (const auto& suffix: ICON_SUFFIXES) {
+					addFile(base % '.' % suffix);
+				}
+			}
+		}
+	}
+
+	return icon;
+}
+
+QPixmap themedPixmap(const QStringList& names, const QSize& size) {
+	for (const auto& name: names) {
+		auto pixmap = QIcon::fromTheme(name).pixmap(size.width(), size.height());
+		if (!pixmap.isNull()) return pixmap;
+	}
+
+	return QPixmap();
+}
+
 } // namespace
 
 QPixmap
 IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& requestedSize) {
 	auto request = parseIconRequest(id);
 
-	auto icon = QIcon::fromTheme(request.iconName);
-	if (icon.isNull() && !request.fallbackName.isEmpty()) {
-		icon = QIcon::fromTheme(request.fallbackName);
-	}
-
-	if (icon.isNull() && !request.themePath.isEmpty()) {
-		auto fileName = request.iconName.sliced(request.iconName.lastIndexOf('/') + 1);
-		icon = QPixmap(QString("/%1/%2").arg(request.themePath, fileName));
 	}
 
 	auto targetSize = requestedSize.isValid() ? requestedSize : QSize(100, 100);
 	if (targetSize.width() == 0 || targetSize.height() == 0) targetSize = QSize(2, 2);
-	auto pixmap = icon.pixmap(targetSize.width(), targetSize.height());
+	auto pixmap = IconImageProvider::requestPixmapForIcon(iconName, path, fallbackName, targetSize);
 
 	if (pixmap.isNull()) {
 		qWarning() << "Could not load icon" << id << "at size" << targetSize << "from request";
@@ -62,6 +177,21 @@ IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& re
 	}
 
 	if (size != nullptr) *size = pixmap.size();
+	return pixmap;
+}
+
+QPixmap IconImageProvider::requestPixmapForIcon(
+    const QString& icon,
+    const QString& path,
+    const QString& fallback,
+    const QSize& size
+) {
+	auto names = iconNameCandidates(icon);
+
+	auto pixmap = themedPixmap(names, size);
+	if (pixmap.isNull()) pixmap = themedPixmap(iconNameCandidates(fallback), size);
+	if (pixmap.isNull()) pixmap = iconFromFiles(names, path).pixmap(size.width(), size.height());
+
 	return pixmap;
 }
 
