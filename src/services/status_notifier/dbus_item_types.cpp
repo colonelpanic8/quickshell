@@ -5,9 +5,15 @@
 #include <qendian.h>
 #include <qimage.h>
 #include <qlogging.h>
+#include <qloggingcategory.h>
 #include <qmetatype.h>
 #include <qsysinfo.h>
 #include <qtypes.h>
+
+#include "../../core/logcat.hpp"
+
+// NOLINTNEXTLINE(misc-use-internal-linkage)
+QS_DECLARE_LOGGING_CATEGORY(logStatusNotifierItem); // item.cpp
 
 bool DBusSniIconPixmap::operator==(const DBusSniIconPixmap& other) const {
 	return this->width == other.width && this->height == other.height && this->data == other.data;
@@ -19,6 +25,15 @@ bool DBusSniTooltip::operator==(const DBusSniTooltip& other) const {
 }
 
 QImage DBusSniIconPixmap::createImage() const {
+	if (this->width <= 0 || this->height <= 0
+	    || this->data.size() / 4 < static_cast<qint64>(this->width) * this->height)
+	{
+		qCWarning(logStatusNotifierItem).nospace()
+		    << "Ignoring malformed StatusNotifierItem pixmap (" << this->width << 'x' << this->height
+		    << ", " << this->data.size() << " bytes)";
+		return QImage();
+	}
+
 	// fix byte order if on a little endian machine
 	if (QSysInfo::ByteOrder == QSysInfo::LittleEndian) {
 		auto* newbuf = new quint32[this->data.size()];
