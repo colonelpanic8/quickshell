@@ -165,11 +165,14 @@ QPixmap
 IconImageProvider::requestPixmap(const QString& id, QSize* size, const QSize& requestedSize) {
 	auto request = parseIconRequest(id);
 
-	}
-
 	auto targetSize = requestedSize.isValid() ? requestedSize : QSize(100, 100);
 	if (targetSize.width() == 0 || targetSize.height() == 0) targetSize = QSize(2, 2);
-	auto pixmap = IconImageProvider::requestPixmapForIcon(iconName, path, fallbackName, targetSize);
+	auto pixmap = IconImageProvider::requestPixmapForIcon(
+	    request.iconName,
+	    request.themePath,
+	    request.fallbackName,
+	    targetSize
+	);
 
 	if (pixmap.isNull()) {
 		qWarning() << "Could not load icon" << id << "at size" << targetSize << "from request";
