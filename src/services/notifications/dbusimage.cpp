@@ -15,12 +15,25 @@ namespace qs::service::notifications {
 QS_DECLARE_LOGGING_CATEGORY(logNotifications); // server.cpp
 
 QImage DBusNotificationImage::createImage() const {
+	auto channels = this->hasAlpha ? 4 : 3;
+	auto rowSize = static_cast<qint64>(this->width) * channels;
+
+	if (this->width <= 0 || this->height <= 0 || this->rowstride < rowSize
+	    || this->data.size() < static_cast<qint64>(this->rowstride) * (this->height - 1) + rowSize)
+	{
+		qCWarning(logNotifications).nospace()
+		    << "Ignoring malformed notification image (" << this->width << 'x' << this->height
+		    << ", rowstride " << this->rowstride << ", " << this->data.size() << " bytes)";
+		return QImage();
+	}
+
 	auto format = this->hasAlpha ? QImage::Format_RGBA8888 : QImage::Format_RGB888;
 
 	return QImage(
 	    reinterpret_cast<const uchar*>(this->data.data()),
 	    this->width,
 	    this->height,
+	    this->rowstride,
 	    format
 	);
 }
@@ -29,7 +42,7 @@ const QDBusArgument& operator>>(const QDBusArgument& argument, DBusNotificationI
 	argument.beginStructure();
 	argument >> pixmap.width;
 	argument >> pixmap.height;
-	auto rowstride = qdbus_cast<qint32>(argument);
+	argument >> pixmap.rowstride;
 	argument >> pixmap.hasAlpha;
 	auto sampleBits = qdbus_cast<qint32>(argument);
 	auto channels = qdbus_cast<qint32>(argument);
@@ -42,9 +55,6 @@ const QDBusArgument& operator>>(const QDBusArgument& argument, DBusNotificationI
 	} else if (channels != (pixmap.hasAlpha ? 4 : 3)) {
 		qCWarning(logNotifications) << "Unable to parse pixmap as channel count is incorrect."
 		                            << "Got " << channels << "expected" << (pixmap.hasAlpha ? 4 : 3);
-	} else if (rowstride != pixmap.width * channels) {
-		qCWarning(logNotifications) << "Unable to parse pixmap as rowstride is incorrect. Got"
-		                            << rowstride << "expected" << (pixmap.width * channels);
 	}
 
 	return argument;
@@ -54,7 +64,7 @@ const QDBusArgument& operator<<(QDBusArgument& argument, const DBusNotificationI
 	argument.beginStructure();
 	argument << pixmap.width;
 	argument << pixmap.height;
-	argument << pixmap.width * (pixmap.hasAlpha ? 4 : 3);
+	argument << pixmap.rowstride;
 	argument << pixmap.hasAlpha;
 	argument << 8;
 	argument << (pixmap.hasAlpha ? 4 : 3);
