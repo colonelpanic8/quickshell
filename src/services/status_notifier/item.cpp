@@ -176,7 +176,7 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 		if (icon == nullptr) return QPixmap();
 
 		return QPixmap::fromImage(
-		    icon->createImage().scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+		    icon->createImage().scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation)
 		);
 	};
 
