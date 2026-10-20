@@ -10,3 +10,4 @@
 - Fixed a crash when a tray item sends an icon pixmap smaller than its stated size.
 - Fixed tray items with a missing or nonstandard status being reported as passive.
 - Fixed tray items with a missing or nonstandard category being reported as hardware.
+- Fixed `SystemTray.items` not being consistently sorted by category.
