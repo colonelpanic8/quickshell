@@ -11,3 +11,4 @@
 - Fixed tray items with a missing or nonstandard status being reported as passive.
 - Fixed tray items with a missing or nonstandard category being reported as hardware.
 - Fixed `SystemTray.items` not being consistently sorted by category.
+- Fixed log spam when Chromium/Electron and Qt 6 tray items fail reads of properties they do not provide.
