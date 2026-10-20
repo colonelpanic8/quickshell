@@ -9,3 +9,4 @@
 - Fixed tray items disappearing or getting stuck when another tray item with a similar bus name exited.
 - Fixed a crash when a tray item sends an icon pixmap smaller than its stated size.
 - Fixed tray items with a missing or nonstandard status being reported as passive.
+- Fixed tray items with a missing or nonstandard category being reported as hardware.

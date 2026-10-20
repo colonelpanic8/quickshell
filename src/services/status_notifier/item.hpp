@@ -51,7 +51,8 @@ enum Enum : quint8 {
 	/// System services such as IMEs or disk indexing.
 	SystemServices = 1,
 	/// The fallback category for general applications or anything that does
-	/// not fit into a different category.
+	/// not fit into a different category. Also used for items with a missing
+	/// or nonconformant category.
 	ApplicationStatus = 2,
 	/// Communication related applications such as instant messengers or email clients.
 	Communications = 3,
@@ -186,7 +187,7 @@ private:
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bId, &StatusNotifierItem::idChanged);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bTitle, &StatusNotifierItem::titleChanged);
 	Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(StatusNotifierItem, Status::Enum, bStatus, Status::Active, &StatusNotifierItem::statusChanged);
-	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, Category::Enum, bCategory, &StatusNotifierItem::categoryChanged);
+	Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(StatusNotifierItem, Category::Enum, bCategory, Category::ApplicationStatus, &StatusNotifierItem::categoryChanged);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bIconThemePath);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bIconName);
 	Q_OBJECT_BINDABLE_PROPERTY(StatusNotifierItem, QString, bOverlayIconName);

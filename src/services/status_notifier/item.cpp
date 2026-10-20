@@ -374,10 +374,10 @@ DBusResult<Category::Enum> DBusDataTransform<Category::Enum>::fromWire(const QSt
 	if (wire == "SystemServices") return DBusResult(Category::SystemServices);
 	if (wire == "Hardware") return DBusResult(Category::Hardware);
 
-	return DBusResult<Category::Enum>(QDBusError(
-	    QDBusError::InvalidArgs,
-	    QString("Nonconformant StatusNotifierItem Category: %1").arg(wire)
-	));
+	qCDebug(logStatusNotifierItem) << "Treating nonconformant StatusNotifierItem Category" << wire
+	                               << "as ApplicationStatus";
+
+	return DBusResult(Category::ApplicationStatus);
 }
 
 } // namespace qs::dbus
