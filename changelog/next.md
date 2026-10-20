@@ -20,3 +20,5 @@
 - Fixed tray icons briefly failing to load when their icon name and theme path changed together.
 - Fixed tray overlay pixmaps being ignored for items with a named icon.
 - Fixed icons not being found in a theme path given as a file url, with an extension, or as a directory containing or inside an icon theme.
+- Fixed tray icons falling back to the missing icon placeholder when another supplied name or pixmap could be used.
+- Fixed tray overlay icon names ignoring the item's theme path.
