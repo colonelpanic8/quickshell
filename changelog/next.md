@@ -1,3 +1,7 @@
+## New Features
+
+- Added `SystemTrayItem.watcherAddress`, the address the item registered with the tray watcher.
+
 ## Bug Fixes
 
 - Fixed ScriptModel not sending role updates on changed data that compares equal by key or structure.

@@ -103,6 +103,8 @@ class StatusNotifierItem: public QObject {
 	// clang-format off
 	/// A name unique to the application, such as its name.
 	Q_PROPERTY(QString id READ default NOTIFY idChanged BINDABLE bindableId);
+	/// The address the item registered with the StatusNotifierWatcher, e.g. `:1.42/StatusNotifierItem`.
+	Q_PROPERTY(QString watcherAddress READ watcherAddress CONSTANT);
 	/// Text that describes the application.
 	Q_PROPERTY(QString title READ default NOTIFY titleChanged BINDABLE bindableTitle);
 	Q_PROPERTY(qs::service::sni::Status::Enum status READ default NOTIFY statusChanged BINDABLE bindableStatus);
@@ -135,6 +137,7 @@ public:
 	/// Display a platform menu at the given location relative to the parent window.
 	Q_INVOKABLE void display(QObject* parentWindow, qint32 relativeX, qint32 relativeY);
 
+	[[nodiscard]] QString watcherAddress() const { return this->watcherId; }
 	[[nodiscard]] bool isValid() const;
 	[[nodiscard]] bool isReady() const;
 	[[nodiscard]] QBindable<QString> bindableIcon() const { return &this->bIcon; }
