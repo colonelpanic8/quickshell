@@ -1,6 +1,7 @@
 ## New Features
 
 - Added `SystemTrayItem.contextMenu()` to open menus of tray items that draw their own, such as Wine applications.
+- Added `SystemTrayItem.watcherAddress`, the address the item registered with the tray watcher.
 
 ## Bug Fixes
 
