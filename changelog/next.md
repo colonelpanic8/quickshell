@@ -24,3 +24,5 @@
 - Fixed tray overlay icon names ignoring the item's theme path.
 - Fixed tray icons selecting empty or poorly sized pixmaps and stretching non-square images.
 - Fixed tray overlay icons covering the whole icon instead of being drawn as a badge.
+- Fixed notification images with unpadded rows being decoded incorrectly.
+- Fixed a possible crash when a notification image is smaller than its stated size.
