@@ -30,6 +30,9 @@ void SystemTray::onItemUnregistered(StatusNotifierItem* item) { this->mItems.rem
 ObjectModel<StatusNotifierItem>* SystemTray::items() { return &this->mItems; }
 
 bool SystemTray::compareItems(StatusNotifierItem* a, StatusNotifierItem* b) {
-	return a->bindableCategory().value() < b->bindableCategory().value()
-	    || a->bindableId().value().compare(b->bindableId().value(), Qt::CaseInsensitive) >= 0;
+	auto aCategory = a->bindableCategory().value();
+	auto bCategory = b->bindableCategory().value();
+	if (aCategory != bCategory) return aCategory < bCategory;
+
+	return a->bindableId().value().compare(b->bindableId().value(), Qt::CaseInsensitive) >= 0;
 }
