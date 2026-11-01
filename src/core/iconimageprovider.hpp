@@ -11,6 +11,14 @@ public:
 
 	static QPixmap missingPixmap(const QSize& size);
 
+	// Returns a null pixmap if the icon could not be found.
+	static QPixmap requestPixmapForIcon(
+	    const QString& icon,
+	    const QString& path,
+	    const QString& fallback,
+	    const QSize& size
+	);
+
 	static QString requestString(
 	    const QString& icon,
 	    const QString& path = QString(),
