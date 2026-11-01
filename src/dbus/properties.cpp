@@ -263,7 +263,14 @@ void DBusPropertyGroup::requestPropertyUpdates(const QList<DBusPropertyCore*>& p
 			const QDBusPendingReply<QDBusVariant> reply = *call;
 
 			if (reply.isError()) {
-				if (!property->isRequired() && reply.error().type() == QDBusError::InvalidArgs) {
+				auto errorType = reply.error().type();
+
+				// Services disagree on the error for a missing property: Chromium sends Failed and
+				// Qt 6 sends UnknownProperty. A property never seen in GetAll is expected to fail.
+				if (!property->isRequired()
+				    && (!property->exists() || errorType == QDBusError::InvalidArgs
+				        || errorType == QDBusError::UnknownProperty))
+				{
 					qCDebug(logDbusProperties) << "Error updating non-required property" << propStr;
 					qCDebug(logDbusProperties) << reply.error();
 				} else {
