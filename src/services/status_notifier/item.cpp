@@ -14,7 +14,6 @@
 #include <qpainter.h>
 #include <qpixmap.h>
 #include <qqmlengine.h>
-#include <qrect.h>
 #include <qsize.h>
 #include <qstring.h>
 #include <qtmetamacros.h>
@@ -220,7 +219,7 @@ QPixmap StatusNotifierItem::createPixmap(const QSize& size) const {
 
 		if (!pixmap.isNull() && !overlay.isNull()) {
 			auto painter = QPainter(&pixmap);
-			painter.drawPixmap(QRect(0, 0, overlay.width(), overlay.height()), overlay);
+			painter.drawPixmap(0, 0, overlay);
 			painter.end();
 		}
 	}
