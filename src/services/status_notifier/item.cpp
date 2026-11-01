@@ -6,6 +6,7 @@
 #include <qdbuspendingcall.h>
 #include <qdbuspendingreply.h>
 #include <qicon.h>
+#include <qlist.h>
 #include <qlogging.h>
 #include <qloggingcategory.h>
 #include <qnamespace.h>
@@ -63,21 +64,19 @@ StatusNotifierItem::StatusNotifierItem(const QString& address, QObject* parent)
 	});
 
 	QObject::connect(this->item, &DBusStatusNotifierItem::NewIcon, this, [this]() {
-		this->pIconName.requestUpdate();
-		this->pIconPixmaps.requestUpdate();
-		if (this->pIconThemePath.exists()) this->pIconThemePath.requestUpdate();
+		this->requestIconUpdate(this->pIconName, this->pIconPixmaps);
 	});
 
 	QObject::connect(this->item, &DBusStatusNotifierItem::NewOverlayIcon, this, [this]() {
-		this->pOverlayIconName.requestUpdate();
-		this->pOverlayIconPixmaps.requestUpdate();
-		if (this->pIconThemePath.exists()) this->pIconThemePath.requestUpdate();
+		this->requestIconUpdate(this->pOverlayIconName, this->pOverlayIconPixmaps);
 	});
 
 	QObject::connect(this->item, &DBusStatusNotifierItem::NewAttentionIcon, this, [this]() {
-		this->pAttentionIconName.requestUpdate();
-		this->pAttentionIconPixmaps.requestUpdate();
-		if (this->pIconThemePath.exists()) this->pIconThemePath.requestUpdate();
+		this->requestIconUpdate(this->pAttentionIconName, this->pAttentionIconPixmaps);
+	});
+
+	QObject::connect(this->item, &DBusStatusNotifierItem::NewIconThemePath, this, [this]() {
+		this->properties.requestPropertyUpdates({&this->pIconThemePath, &this->pIconName, &this->pOverlayIconName, &this->pAttentionIconName});
 	});
 
 	QObject::connect(this->item, &DBusStatusNotifierItem::NewToolTip, this, [this]() {
@@ -289,6 +288,17 @@ void StatusNotifierItem::contextMenu(qint32 x, qint32 y) {
 
 void StatusNotifierItem::scroll(qint32 delta, bool horizontal) const {
 	this->item->Scroll(delta, horizontal ? "horizontal" : "vertical");
+}
+
+void StatusNotifierItem::requestIconUpdate(DBusPropertyCore& name, DBusPropertyCore& pixmaps) {
+	// Names are resolved against the theme path, so both must change together to avoid
+	// briefly looking up the new name in the old path or vice versa.
+	auto properties = QList<DBusPropertyCore*>();
+	if (this->pIconThemePath.exists()) properties.append(&this->pIconThemePath);
+	properties.append(&name);
+	properties.append(&pixmaps);
+
+	this->properties.requestPropertyUpdates(properties);
 }
 
 void StatusNotifierItem::updatePixmapIndex() { this->pixmapIndex = this->pixmapIndex + 1; }
