@@ -1,3 +1,7 @@
+## New Features
+
+- Added `SystemTrayItem.contextMenu()` to open menus of tray items that draw their own, such as Wine applications.
+
 ## Bug Fixes
 
 - Fixed ScriptModel not sending role updates on changed data that compares equal by key or structure.

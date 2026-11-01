@@ -262,6 +262,31 @@ void StatusNotifierItem::secondaryActivate() {
 	QObject::connect(call, &QDBusPendingCallWatcher::finished, this, responseCallback);
 }
 
+void StatusNotifierItem::contextMenu(qint32 x, qint32 y) {
+	auto pendingCall = this->item->ContextMenu(x, y);
+	auto* call = new QDBusPendingCallWatcher(pendingCall, this);
+
+	auto responseCallback = [this](QDBusPendingCallWatcher* call) {
+		const QDBusPendingReply<> reply = *call;
+
+		if (reply.isError()) {
+			if (reply.error().type() == QDBusError::UnknownMethod) {
+				qCDebug(logStatusNotifierItem) << "Tried to call ContextMenu method of StatusNotifierItem"
+				                               << this->properties.toString() << "but it does not exist.";
+			} else {
+				qCWarning(logStatusNotifierItem).noquote()
+				    << "Error calling ContextMenu method of StatusNotifierItem"
+				    << this->properties.toString();
+				qCWarning(logStatusNotifierItem) << reply.error();
+			}
+		}
+
+		delete call;
+	};
+
+	QObject::connect(call, &QDBusPendingCallWatcher::finished, this, responseCallback);
+}
+
 void StatusNotifierItem::scroll(qint32 delta, bool horizontal) const {
 	this->item->Scroll(delta, horizontal ? "horizontal" : "vertical");
 }
