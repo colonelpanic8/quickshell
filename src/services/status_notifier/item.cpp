@@ -116,15 +116,9 @@ StatusNotifierItem::StatusNotifierItem(const QString& address, QObject* parent)
 	    this,
 	    [this](const QString& value) {
 		    auto result = DBusDataTransform<Status::Enum>::fromWire(value);
-
-		    if (result.isValid()) {
-			    this->bStatus = result.value;
-			    qCDebug(logStatusNotifierItem)
-			        << "Received status update for" << this->properties.toString() << result.value;
-		    } else {
-			    qCWarning(logStatusNotifierItem)
-			        << "Received invalid status update for" << this->properties.toString() << value;
-		    }
+		    this->bStatus = result.value;
+		    qCDebug(logStatusNotifierItem)
+		        << "Received status update for" << this->properties.toString() << result.value;
 	    }
 	);
 
@@ -366,10 +360,12 @@ DBusResult<Status::Enum> DBusDataTransform<Status::Enum>::fromWire(const QString
 	if (wire == QStringLiteral("Active")) return DBusResult(Status::Active);
 	if (wire == QStringLiteral("NeedsAttention")) return DBusResult(Status::NeedsAttention);
 
-	return DBusResult<Status::Enum>(QDBusError(
-	    QDBusError::InvalidArgs,
-	    QString("Nonconformant StatusNotifierItem Status: %1").arg(wire)
-	));
+	// Some items (e.g. v2rayN) put arbitrary text in Status. Hiding them as passive
+	// or dropping the update is worse than assuming they want to be shown.
+	qCDebug(logStatusNotifierItem) << "Treating nonconformant StatusNotifierItem Status" << wire
+	                               << "as Active";
+
+	return DBusResult(Status::Active);
 }
 
 DBusResult<Category::Enum> DBusDataTransform<Category::Enum>::fromWire(const QString& wire) {
