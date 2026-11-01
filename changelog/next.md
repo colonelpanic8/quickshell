@@ -22,3 +22,5 @@
 - Fixed icons not being found in a theme path given as a file url, with an extension, or as a directory containing or inside an icon theme.
 - Fixed tray icons falling back to the missing icon placeholder when another supplied name or pixmap could be used.
 - Fixed tray overlay icon names ignoring the item's theme path.
+- Fixed tray icons selecting empty or poorly sized pixmaps and stretching non-square images.
+- Fixed tray overlay icons covering the whole icon instead of being drawn as a badge.
