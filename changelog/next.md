@@ -6,3 +6,4 @@
 - Fixed `WlSessionLock.locked` changes not being emitted on unlock.
 - Fixed a crash when unplugging a screen being captured by ScreencopyView or trying to capture the fallback screen.
 - Fixed most broken qml types in qmlls/qmllint for Qt 6.12.
+- Fixed tray items disappearing or getting stuck when another tray item with a similar bus name exited.

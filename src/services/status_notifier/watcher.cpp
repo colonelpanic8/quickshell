@@ -74,19 +74,24 @@ void StatusNotifierWatcher::onServiceUnregistered(const QString& service) {
 		this->tryRegister();
 		return;
 	} else {
-		QString qualifiedItem;
+		// Items are stored as service + path, so a bare prefix match would also catch
+		// services sharing a prefix (e.g. :1.12 and :1.123).
+		auto prefix = service + '/';
+		QList<QString> removedItems;
 		this->items.removeIf([&](const QString& item) {
-			if (item.startsWith(service)) {
-				qualifiedItem = item;
+			if (item.startsWith(prefix)) {
+				removedItems.push_back(item);
 				return true;
 			} else return false;
 		});
 
-		if (!qualifiedItem.isEmpty()) {
-			qCDebug(logStatusNotifierWatcher).noquote()
-			    << "Unregistered StatusNotifierItem" << qualifiedItem << "from watcher";
+		if (!removedItems.isEmpty()) {
+			for (const auto& item: removedItems) {
+				qCDebug(logStatusNotifierWatcher).noquote()
+				    << "Unregistered StatusNotifierItem" << item << "from watcher";
 
-			emit this->StatusNotifierItemUnregistered(qualifiedItem);
+				emit this->StatusNotifierItemUnregistered(item);
+			}
 		} else if (this->hosts.removeAll(service) != 0) {
 			qCDebug(logStatusNotifierWatcher).noquote()
 			    << "Unregistered StatusNotifierHost" << service << "from watcher";
